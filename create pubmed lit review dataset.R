@@ -13,7 +13,7 @@ library(tidyverse)
 #------------------------------------#
 # read exported file from pubmed
 
-pubmed <- read.csv("/Users/katherineschaughency/Desktop/Desktop/Work Related/exportlist.csv", header=F)
+pubmed <- read.csv("/Users/katherineschaughency/[insert file path]/exportlist.csv", header=F)
 
 # preview data
 View(pubmed)
@@ -75,7 +75,7 @@ dim(title.review)
 # export the unique list for review
 
 write.csv(x = title.review, 
-          file = "/Users/katherineschaughency/Desktop/Desktop/Work Related/title review list.csv",
+          file = "/Users/katherineschaughency/[insert file path]/title review list.csv",
           row.names = F)
 
 
