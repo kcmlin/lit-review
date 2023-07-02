@@ -86,6 +86,7 @@ head(pubmed.abstract)
 
 #------------------------------------#
 # combine key variables into one dataset for title and abstract reviews
+# deduplicate articles using PMID
 
 join.1 <- left_join(x = pubmed.year %>% select(new.article.id, year), 
                     y = pubmed.journal, 
