@@ -106,7 +106,7 @@ join.6 <- left_join(x = join.5,
                     y = pubmed.url,
                     by = "new.article.id")
 
-review <- join.6
+review <- join.6 %>% distinct(pmid, .keep_all = TRUE)
 
 # preview data
 View(head(review))
