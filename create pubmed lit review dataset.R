@@ -1,8 +1,9 @@
 #######################################
-# Create Lit Review List from PubMed Pull
+# Create a literature review list from a PubMed pull
 #
 # Katherine Schaughency
-# 13 June 2023
+# created: 13 June 2023
+# updated: 2 July 2023 
 #######################################
 
 #------------------------------------#
@@ -11,9 +12,21 @@
 library(tidyverse)
 
 #------------------------------------#
-# read exported file from pubmed
+# set working directory
 
-pubmed <- read.csv("/Users/katherineschaughency/[insert file path]/exportlist.csv", header=F)
+setwd("/Users/katherineschaughency/Documents/GitHub/lit-review/")
+
+#------------------------------------#
+# read exported file from pubmed
+# create an unique id for each new article
+
+pubmed <- read.csv("exportlist.csv", header=F) %>% 
+            mutate(seq.id = 1:n()) %>% 
+            mutate(new.article = case_when(str_detect(V1, paste0("^","%0 ")) ~ "X")) %>% 
+            mutate(new.article.id = case_when(new.article=="X" ~ paste0(new.article, seq.id))) %>% 
+            fill(new.article.id) %>% 
+            select(-seq.id,-new.article)
+  
 
 # preview data
 View(pubmed)
@@ -24,58 +37,87 @@ dim(pubmed)
 # rename variables to relevant title
 # preview data
 
-# english only journal
-pubmed.eng <- pubmed  %>% filter(str_detect(V1, paste0("^","%G eng"))) %>% rename(eng = V1) 
-dim(pubmed.eng)
-head(pubmed.eng)
 
 # publication year
-pubmed.year <- pubmed %>% filter(str_detect(V1, paste0("^","%D"))) %>% rename(year = V1)
+pubmed.year <- pubmed %>% filter(str_detect(V1, paste0("^","%D"))) %>% 
+                    rename(year = V1)
 dim(pubmed.year)
 head(pubmed.year)
 
 # publication journal
-pubmed.journal <- pubmed %>% filter(str_detect(V1, paste0("^","%B"))) %>% rename(journal = V1)
+pubmed.journal <- pubmed %>% filter(str_detect(V1, paste0("^","%B"))) %>% 
+                    rename(journal = V1)
 dim(pubmed.journal)
 head(pubmed.journal)
 
 # PMID
-pubmed.pmid <- pubmed %>% filter(str_detect(V1, paste0("^","%M"))) %>% rename(pmid = V1)
+pubmed.pmid <- pubmed %>% filter(str_detect(V1, paste0("^","%M"))) %>% 
+                    rename(pmid = V1)
 dim(pubmed.pmid)
 head(pubmed.pmid)
 
 # first author
-pubmed.author <- pubmed %>% filter(str_detect(V1, paste0("^","%A"))) %>% rename(author = V1)
+pubmed.author <- pubmed %>% filter(str_detect(V1, paste0("^","%A"))) %>% 
+                    rename(author = V1) %>% 
+                    group_by(new.article.id) %>% 
+                    slice(1) %>% 
+                    ungroup() 
 dim(pubmed.author)
 head(pubmed.author)
 
 # title
-pubmed.title <- pubmed %>% filter(str_detect(V1, paste0("^","%T"))) %>% rename(title = V1)
+pubmed.title <- pubmed %>% filter(str_detect(V1, paste0("^","%T"))) %>% 
+                    rename(title = V1)
 dim(pubmed.title)
 head(pubmed.title)
 
 # URL
-pubmed.url <- pubmed %>% filter(str_detect(V1, paste0("^","%U"))) %>% rename(url = V1)
+pubmed.url <- pubmed %>% filter(str_detect(V1, paste0("^","%U"))) %>% 
+                    rename(url = V1)
 dim(pubmed.url)
 head(pubmed.url)
 
+# abstract
+pubmed.abstract <- pubmed %>% filter(str_detect(V1, paste0("^","%X"))) %>% 
+                    rename(abstract = V1)
+dim(pubmed.abstract)
+head(pubmed.abstract)
+
 
 #------------------------------------#
-# combine key variables into one dataset for title review
-# deduplicate entries
+# combine key variables into one dataset for title and abstract reviews
 
-title.review <- cbind(pubmed.year, pubmed.journal, pubmed.pmid, pubmed.title) %>% filter(!duplicated(join.4))
+join.1 <- left_join(x = pubmed.year %>% select(new.article.id, year), 
+                    y = pubmed.journal, 
+                    by = "new.article.id")
+join.2 <- left_join(x = join.1,
+                    y = pubmed.pmid,
+                    by = "new.article.id")
+join.3 <- left_join(x = join.2,
+                    y = pubmed.author,
+                    by = "new.article.id")
+join.4 <- left_join(x = join.3,
+                    y = pubmed.title,
+                    by = "new.article.id")
+join.5 <- left_join(x = join.4,
+                    y = pubmed.abstract,
+                    by = "new.article.id")
+join.6 <- left_join(x = join.5,
+                    y = pubmed.url,
+                    by = "new.article.id")
+
+review <- join.6
 
 # preview data
-View(head(title.review))
-dim(title.review)
+View(head(review))
+dim(review)
 
 
 #------------------------------------#
 # export the unique list for review
 
-write.csv(x = title.review, 
-          file = "/Users/katherineschaughency/[insert file path]/title review list.csv",
+write.csv(x = review, 
+          file = "title and abstract review list.csv",
           row.names = F)
 
 
